@@ -251,6 +251,8 @@ fun CreateVideoScreen(model: AppModel, onStarted: () -> Unit, onAddVoice: () -> 
     var aspect by rememberSaveable { mutableStateOf("9:16") }
     var subtitles by rememberSaveable { mutableStateOf(true) }
     var images by remember { mutableStateOf(listOf<Uri>()) }
+    var autoImages by rememberSaveable { mutableStateOf(true) }
+    var imageQuery by rememberSaveable { mutableStateOf("") }
     var music by rememberSaveable { mutableStateOf<Uri?>(null) }
     val pickImages = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { images = it }
     FormColumn {
@@ -269,9 +271,18 @@ fun CreateVideoScreen(model: AppModel, onStarted: () -> Unit, onAddVoice: () -> 
                 Column(Modifier.weight(1f)) {
                     Text("Görseller (isteğe bağlı)", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
-                    Text(if (images.isEmpty()) "Seçilmezse renkli arka planlar kullanılır" else "${images.size} görsel seçildi")
+                    Text(if (images.isEmpty()) "Kendi görsellerini seçebilirsin" else "${images.size} görsel seçildi")
                 }
                 if (images.isNotEmpty()) TextButton(onClick = { images = emptyList() }) { Text("Kaldır") }
+            }
+        }
+        if (images.isEmpty()) {
+            SwitchRow("İnternetten görsel bul", "Her sahneye uygun, serbest lisanslı bir fotoğraf arka plan olur; " +
+                "kapalıysa renkli arka planlar kullanılır", autoImages) { autoImages = it }
+            if (autoImages) {
+                OutlinedTextField(imageQuery, { imageQuery = it }, label = { Text("Görsel konusu (isteğe bağlı)") },
+                    supportingText = { Text("Örn. İstanbul, uzay, orman. Boş bırakılırsa her sahnenin kendi metnine göre aranır") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth())
             }
         }
         FilePick("Fon müziği (isteğe bağlı)", "audio/*", music) { music = it }
@@ -280,7 +291,8 @@ fun CreateVideoScreen(model: AppModel, onStarted: () -> Unit, onAddVoice: () -> 
             model.startJob(
                 "create-video",
                 mapOf("script" to script, "language" to language, "voice_id" to voice, "aspect" to aspect,
-                    "subtitles" to "$subtitles"),
+                    "subtitles" to "$subtitles", "auto_images" to "${autoImages && images.isEmpty()}",
+                    "image_query" to imageQuery.trim()),
                 images.map { Upload("images", it) } + listOfNotNull(music?.let { Upload("music", it) }), onStarted,
             )
         }

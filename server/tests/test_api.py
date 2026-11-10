@@ -159,6 +159,45 @@ def test_create_video(voice_id):
     assert (info["width"], info["height"]) == (1280, 720) and info["duration"] > 4
 
 
+def test_create_video_with_web_images(voice_id, monkeypatch):
+    from PIL import Image
+    web, asked = pipeline.web, []
+
+    def search(query, aspect):
+        asked.append(query)
+        return [{"url": f"https://example.org/{n}.jpg", "title": f"Foto {n}", "creator": "Ada",
+                 "license": "CC BY 4.0", "page": "https://example.org"} for n in range(2)]
+
+    def fetch(url, dst):
+        if url.endswith("0.jpg"):  # the first hit is broken: the next one must be tried
+            return None
+        Image.new("RGB", (900, 600), (40, 90, 160)).save(dst)
+        return Path(dst)
+
+    monkeypatch.setattr(web, "search", search)
+    monkeypatch.setattr(web, "download", fetch)
+    data = {"script": "Deniz kenarında güneş batıyor.\nŞehir ışıkları yanıyor.", "language": "tr",
+            "voice_id": voice_id, "aspect": "16:9", "auto_images": "true", "image_query": "İstanbul"}
+    job = wait(client.post("/api/jobs/create-video", data=data).json())
+    # one topic search serves every scene; its only working picture is shared, not mixed with gradients
+    assert len(asked) == 1 and job["extras"]["web_images"] == 1 and job["extras"]["scenes"] == 2
+    assert "Foto 1 — Ada (CC BY 4.0)" in download(job, "credits").read_text(encoding="utf-8")
+    assert media.probe(download(job))["width"] == 1280
+
+    asked.clear()
+    monkeypatch.setattr(web, "search", lambda query, aspect: asked.append(query) or [])
+    job = wait(client.post("/api/jobs/create-video", data={**data, "image_query": ""}).json())
+    # nothing found: each scene was searched by its own words (then by fewer) and gradients are used
+    assert len(asked) == 4 and job["extras"]["web_images"] == 0 and "credits" not in job["extras"]
+
+
+def test_image_keywords():
+    from altry import images
+    assert images.keywords("The sun is setting over the beautiful old harbour of the city") == \
+        "setting beautiful harbour city"
+    assert images.keywords("...") == ""
+
+
 def test_delete_job_and_voice_validation(voice_id):
     job = wait(client.post("/api/jobs/speak", data={"text": "Selam", "language": "tr", "voice_id": voice_id}).json())
     assert client.delete(f"/api/jobs/{job['id']}").json()["ok"]

@@ -188,7 +188,10 @@ def create_speech(text: str = Form(...), language: str = Form(...), voice_id: st
 @api.post("/jobs/create-video")
 def create_video(script: str = Form(...), language: str = Form(...), voice_id: str = Form(...),
                  aspect: str = Form("9:16"), subtitles: bool = Form(True), expressiveness: float = Form(0.5),
-                 images: list[UploadFile] = File(default=[]), music: UploadFile | None = File(None)):
+                 images: list[UploadFile] = File(default=[]), music: UploadFile | None = File(None),
+                 auto_images: bool = Form(False), image_query: str = Form("")):
+    """Script to video. Without uploaded images, `auto_images` finds pictures on the internet:
+    about `image_query` when given, otherwise matching each scene's own words."""
     check_language(language), check_voice(voice_id)
     if not script.strip():
         raise HTTPException(400, "Metin boş / empty script")
@@ -203,7 +206,7 @@ def create_video(script: str = Form(...), language: str = Form(...), voice_id: s
         raise
     return launch(job, pipeline.create_video, script=script, language=language, voice_id=voice_id,
                   images=image_paths, aspect=aspect, subtitles=subtitles, music=music_path,
-                  expressiveness=expressiveness)
+                  expressiveness=expressiveness, auto_images=auto_images, image_query=image_query[:120])
 
 
 @api.get("/jobs")

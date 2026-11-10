@@ -12,7 +12,7 @@ bilgisayarında ya da ücretsiz Google Colab'da çalışır.
 | **Ses değiştirme** | Videodaki/ses kaydındaki konuşmayı, sözleri ve zamanlamayı bozmadan seçtiğin sese dönüştürür. |
 | **Ses klonlama** | Uygulamada 10–20 sn konuş, sesin kütüphaneye eklensin. Dosyadan ya da internetteki bir ses bağlantısından da eklenebilir. |
 | **Metni seslendirme** | Yazdığını klonlanmış sesle söyletir; istersen bir videonun üzerine koyar. |
-| **Sıfırdan video** | Metinden sahne sahne seslendirmeli, altyazılı video üretir (dikey / yatay / kare). Kendi görsellerini ve fon müziğini ekleyebilirsin. |
+| **Sıfırdan video** | Metinden sahne sahne seslendirmeli, altyazılı video üretir (dikey / yatay / kare). Arka plan görsellerini **internetten kendisi bulur** (verdiğin konuya ya da her sahnenin metnine göre; Wikimedia Commons ve Openverse'ten serbest lisanslı fotoğraflar), istersen kendi görsellerini ve fon müziğini eklersin. |
 | **Hazır sesler** | Açık lisanslı örnek sesler tek dokunuşla kütüphaneye eklenir. |
 
 23 dilde konuşur: Türkçe, İngilizce, Almanca, Fransızca, İspanyolca, İtalyanca, Portekizce, Rusça, Arapça, Japonca, Korece, Çince ve diğerleri.

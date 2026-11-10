@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from . import config, engines, media, voices
+from . import images as web  # `images` is also a parameter name below
 from .jobs import Context
 
 ORIGINAL = "original"  # pseudo voice id: clone the speaker heard in the uploaded media
@@ -313,9 +314,67 @@ def _scene_clip(ctx: Context, index: int, image, audio, duration: float, caption
     return out
 
 
+def _english(texts: list[str], language: str) -> list[str]:
+    """Picture search works best in English; fall back to the original words if translation fails."""
+    try:
+        return engines.translate(texts, language, "en")
+    except Exception:
+        return texts
+
+
+def _web_pictures(ctx: Context, scenes: list[str], language: str, aspect: str, topic: str) -> tuple[list, list[str]]:
+    """One internet picture per scene (None only when nothing at all was found), plus the credit lines.
+
+    With a `topic`, every scene gets a different picture of that topic; otherwise each scene is
+    searched by the key words of its own sentence.
+    """
+    topic = topic.strip()
+    queries = _english([topic], language) * len(scenes) if topic else \
+        [web.keywords(t) for t in _english(scenes, language)]
+    results: dict[str, list[dict]] = {}
+    used: set[str] = set()
+    credits: list[str] = []
+
+    def take(query: str, index: int):
+        """The first not-yet-used picture for `query` that really downloads."""
+        if query not in results:
+            results[query] = web.search(query, aspect)
+        tries = 0
+        for item in results[query]:
+            if item["url"] in used:
+                continue
+            if (tries := tries + 1) > 5:  # do not spend minutes on a source whose files will not load
+                break
+            used.add(item["url"])
+            picture = web.download(item["url"], ctx.work / f"web_{index}.jpg")
+            if picture:
+                credits.append(web.credit_line(item))
+                return picture
+        return None
+
+    pictures = []
+    for i, query in enumerate(queries):
+        ctx.progress(0.01 + 0.04 * i / len(queries), f"Görsel aranıyor {i + 1}/{len(queries)}")
+        # too many words can match nothing: try again with just the first two
+        shorter = " ".join(query.split()[:2])
+        pictures.append(take(query, i) or (take(shorter, i) if shorter != query else None))
+    for i, picture in enumerate(pictures):  # a scene without a hit borrows from the other searches
+        if picture is None:
+            pictures[i] = next((p for q in list(results) if (p := take(q, i))), None)
+    found = [p for p in pictures if p]
+    if found:  # still empty: repeat a picture rather than mix photos with plain colours
+        pictures = [p or found[i % len(found)] for i, p in enumerate(pictures)]
+    return pictures, credits
+
+
 def create_video(ctx: Context, script: str, language: str, voice_id: str, images: list | None = None,
-                 aspect: str = "9:16", subtitles: bool = True, music=None, expressiveness: float = 0.5):
-    """Turn a script into a narrated video: one scene per sentence/line, with captions."""
+                 aspect: str = "9:16", subtitles: bool = True, music=None, expressiveness: float = 0.5,
+                 auto_images: bool = False, image_query: str = ""):
+    """Turn a script into a narrated video: one scene per sentence/line, with captions.
+
+    Backgrounds are the uploaded `images`; without any, `auto_images` fetches openly licensed
+    pictures from the internet (about `image_query`, or matching each scene); else colour gradients.
+    """
     size = SIZES.get(aspect)
     if size is None:
         raise PipelineError("Geçersiz en-boy oranı / invalid aspect ratio")
@@ -332,6 +391,9 @@ def create_video(ctx: Context, script: str, language: str, voice_id: str, images
             raise PipelineError(f"Görsel okunamadı / unreadable image #{i + 1}") from e
         picture.save(ctx.work / f"image_{i}.jpg", quality=92)
         pictures.append(ctx.work / f"image_{i}.jpg")
+    found, credits = [], []
+    if auto_images and not pictures:
+        found, credits = _web_pictures(ctx, scenes, language, aspect, image_query)
 
     clips, cues, clock = [], [], 0.0
     for i, text in enumerate(scenes):
@@ -339,7 +401,8 @@ def create_video(ctx: Context, script: str, language: str, voice_id: str, images
         wav = engines.speak(text, language, ref, ctx.work / f"scene_{i}.wav", expressiveness)
         speech = media.probe(wav)["duration"]
         duration = speech + 0.4
-        image = pictures[i % len(pictures)] if pictures else _gradient(size, i, ctx.work / f"bg_{i}.jpg")
+        image = pictures[i % len(pictures)] if pictures else (found[i] if found else None)
+        image = image or _gradient(size, i, ctx.work / f"bg_{i}.jpg")
         captions, chunks, t = [], _caption_chunks(text, 60 if size[0] < size[1] else 80), 0.0
         letters = sum(len(c) for c in chunks)
         for n, chunk in enumerate(chunks):
@@ -365,4 +428,10 @@ def create_video(ctx: Context, script: str, language: str, voice_id: str, images
                      "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                      "-shortest", "-movflags", "+faststart", out)
     srt = media.write_srt(ctx.dir / "subtitles.srt", cues)
-    return out, {"srt": srt.name, "scenes": len(scenes)}
+    extras = {"srt": srt.name, "scenes": len(scenes)}
+    if auto_images and not pictures:
+        extras["web_images"] = len(credits)
+    if credits:  # the pictures are Creative Commons: keep who made them next to the video
+        (ctx.dir / "gorsel_kaynaklari.txt").write_text("\n".join(credits) + "\n", encoding="utf-8")
+        extras["credits"] = "gorsel_kaynaklari.txt"
+    return out, extras
