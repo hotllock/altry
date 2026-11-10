@@ -1,0 +1,14 @@
+# Core server
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+httpx>=0.27
+pillow>=10.1
+# AI engines (all open source, run locally)
+chatterbox-tts>=0.1.7     # multilingual TTS with voice cloning + voice conversion
+faster-whisper>=1.1       # speech recognition
+sentencepiece             # tokenizer for the offline translation model (M2M100)
+deep-translator>=1.11     # free online translation, used first when ALTRY_TRANSLATOR=auto
+# Optional: keeps background music/effects when dubbing ->  pip install demucs
+soundfile
+numpy

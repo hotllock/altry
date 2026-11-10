@@ -1,0 +1,58 @@
+[
+ {
+  "id": "tr-dfki",
+  "name": "Türkçe · DFKI",
+  "language": "tr",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/tr/tr_TR/dfki/medium/samples/speaker_0.mp3",
+  "license": "CC BY-NC-SA 4.0",
+  "credit": "DFKI OpenTTS data / Piper"
+ },
+ {
+  "id": "en-amy",
+  "name": "English (US) · Amy",
+  "language": "en",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/samples/speaker_0.mp3",
+  "license": "see Mycroft mimic3-voices",
+  "credit": "Mycroft AI / Piper"
+ },
+ {
+  "id": "en-ryan",
+  "name": "English (US) · Ryan",
+  "language": "en",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/samples/speaker_0.mp3",
+  "license": "CC BY-NC-SA 4.0",
+  "credit": "RyanSpeech / Piper"
+ },
+ {
+  "id": "en-alan",
+  "name": "English (UK) · Alan",
+  "language": "en",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/samples/speaker_0.mp3",
+  "license": "see Piper model card",
+  "credit": "Piper"
+ },
+ {
+  "id": "de-thorsten",
+  "name": "Deutsch · Thorsten",
+  "language": "de",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/medium/samples/speaker_0.mp3",
+  "license": "CC0",
+  "credit": "Thorsten Müller / Piper"
+ },
+ {
+  "id": "es-davefx",
+  "name": "Español · DaveFX",
+  "language": "es",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/davefx/medium/samples/speaker_0.mp3",
+  "license": "see Piper model card",
+  "credit": "Piper"
+ },
+ {
+  "id": "fr-siwis",
+  "name": "Français · SIWIS",
+  "language": "fr",
+  "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/samples/speaker_0.mp3",
+  "license": "see Piper model card",
+  "credit": "SIWIS / Piper"
+ }
+]

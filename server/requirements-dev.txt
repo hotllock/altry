@@ -1,0 +1,8 @@
+# Enough to run the test suite (ALTRY_FAKE=1 stands in for the AI models)
+fastapi>=0.115
+python-multipart>=0.0.9
+httpx>=0.27
+pillow>=10.1
+numpy
+soundfile
+pytest
